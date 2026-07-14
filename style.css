@@ -219,6 +219,57 @@ canvas#hold-canvas, canvas#next-canvas { display: block; margin: 0 auto; }
 #start-btn:hover { transform: scale(1.06); }
 #start-btn:active { transform: scale(0.96); }
 
+/* ── 대전 모드 UI ─────────────────────── */
+#battle-btn {
+  display: block;
+  margin: 12px auto 0;
+  font-size: 13px; font-weight: 700;
+  color: var(--gold);
+  background: transparent;
+  border: 1px solid #665522;
+  border-radius: 8px;
+  padding: 9px 20px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+#battle-btn:hover { background: rgba(255, 213, 74, 0.1); box-shadow: 0 0 12px rgba(255, 213, 74, 0.25); }
+#battle-panel { margin-top: 12px; }
+#battle-lobby { display: flex; gap: 8px; justify-content: center; align-items: center; flex-wrap: wrap; }
+.mini-btn {
+  font-size: 12px; font-weight: 700;
+  color: var(--text);
+  background: #22224a;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+.mini-btn:hover { background: #2e2e60; }
+.join-row { display: flex; gap: 6px; }
+#join-code {
+  width: 84px;
+  background: #12122c;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 14px;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  padding: 8px 6px;
+  outline: none;
+}
+#join-code:focus { border-color: var(--accent); }
+#battle-status { margin-top: 10px; font-size: 12px; color: var(--dim); min-height: 16px; }
+
+.opp-box canvas {
+  display: block;
+  margin: 0 auto 6px;
+  background: #0d0d20;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
 /* ── 터치 컨트롤 ──────────────────── */
 #touch-controls { display: none; margin-top: 14px; width: 100%; max-width: 440px; }
 .tc-row { display: flex; gap: 8px; justify-content: center; margin-bottom: 8px; }

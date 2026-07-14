@@ -106,6 +106,7 @@ const G = {
   shake: 0,
   particles: [],
   popups: [],
+  attackQueue: [], // 대전 모드: 수신한 공격 (플레이 가능 시점에 적용)
   anim: null, // 진행 중인 애니메이션 상태
   cascadeMode: false, // 시프트 이후 연쇄 판정 모드
   lastTime: 0,
@@ -250,6 +251,7 @@ function startClearing(rows, chainDepth) {
   G.anim = { kind: 'clearing', rows, t: 0, dur: 260, chainDepth };
   scoreClear(rows.length, chainDepth);
   spawnClearParticles(rows);
+  if (Hooks.onClear) Hooks.onClear(rows.length, chainDepth, G.combo);
   if (chainDepth > 0) {
     SFX.chain(chainDepth);
     popup(`${chainDepth + 1} CHAIN!`, canvas.width / 2, ROWS * CELL * 0.35, '#ff2e88', 30);
@@ -372,16 +374,31 @@ function startFalling(moves, onDone) {
   G.anim = { kind: 'falling', moves, t: 0, dur: Math.min(120 + maxDist * 40, 480), onDone };
 }
 
+/* ── 대전 모드 훅 (battle.js가 구독) ──────────────── */
+const Hooks = { onClear: null, onChainEnd: null, onGameOver: null };
+
 /* ── 중력 시프트 (핵심 메커니즘!) ─────────────────── */
 function gravityShift(dir) {
   if (G.phase !== 'play') return;
   if (G.charges <= 0) { popup('NO CHARGE!', canvas.width / 2, ROWS * CELL * 0.4, '#8888bb', 18); return; }
   if (!G.grid.some(row => row.some(c => c))) { popup('보드가 비어있음', canvas.width / 2, ROWS * CELL * 0.4, '#8888bb', 16); return; }
-
   G.charges--;
+  performShift(dir, false);
+}
+/* 상대의 중력 공격: 차지 소모 없이 강제 발동 */
+function forceShift(dir) {
+  if (G.phase !== 'play') return;
+  if (!G.grid.some(row => row.some(c => c))) return;
+  performShift(dir, true);
+}
+function performShift(dir, isAttack) {
   ensureAudio(); SFX.shift();
-  G.shake = Math.min(G.shake + 6, 12);
-  popup(dir > 0 ? 'GRAVITY SHIFT ↻' : 'GRAVITY SHIFT ↺', canvas.width / 2, ROWS * CELL * 0.25, '#00e5ff', 24);
+  G.shake = Math.min(G.shake + (isAttack ? 9 : 6), 14);
+  if (isAttack) {
+    popup('⚡ GRAVITY ATTACK!', canvas.width / 2, ROWS * CELL * 0.25, '#ff2e88', 26);
+  } else {
+    popup(dir > 0 ? 'GRAVITY SHIFT ↻' : 'GRAVITY SHIFT ↺', canvas.width / 2, ROWS * CELL * 0.25, '#00e5ff', 24);
+  }
 
   // 회전된 그리드 계산 (CW: nx=N-1-y, ny=x / CCW: nx=y, ny=N-1-x)
   const rotated = emptyGrid();
@@ -410,6 +427,7 @@ function afterCascadeSettle(chainDepth) {
     if (chainDepth + 1 > G.maxChain) G.maxChain = chainDepth + 1;
     startClearing(rows, chainDepth);
   } else {
+    if (chainDepth >= 1 && Hooks.onChainEnd) Hooks.onChainEnd(chainDepth);
     G.cascadeMode = false;
     G.chain = 0;
     // 얼려둔 현재 피스가 새 지형과 겹치면 위로 밀어냄
@@ -421,6 +439,28 @@ function afterCascadeSettle(chainDepth) {
     updateHUD();
   }
 }
+
+/* ── 대전: 쓰레기 줄 수신 ─────────────────────────── */
+function receiveGarbage(n) {
+  n = Math.min(n, 6);
+  if (n <= 0) return;
+  const newRows = [];
+  for (let i = 0; i < n; i++) {
+    const hole = Math.floor(Math.random() * COLS);
+    const pid = ++G.pidSeq; // 줄 단위 강체
+    newRows.push(Array.from({ length: COLS }, (_, x) => x === hole ? null : { c: '#8a8aa0', p: pid }));
+  }
+  G.grid = [...G.grid.slice(n), ...newRows];
+  // 밀려 올라간 지형과 현재 피스가 겹치면 위로 탈출
+  if (G.piece) {
+    let guard = 0;
+    while (collides(G.piece) && guard++ < ROWS + 4) G.piece.y--;
+  }
+  G.shake = Math.min(G.shake + 3 + n, 12);
+  popup(`+${n} GARBAGE!`, canvas.width / 2, ROWS * CELL * 0.55, '#8a8aa0', 20);
+  SFX.lock();
+}
+function enqueueAttack(a) { G.attackQueue.push(a); }
 
 /* ── 점수/레벨/차지/피버 ──────────────────────────── */
 function addScore(n) {
@@ -517,7 +557,7 @@ function startGame() {
   G.fever = { gauge: 0, active: false, until: 0 };
   G.dropInterval = 800;
   G.particles = []; G.popups = [];
-  G.shake = 0; G.anim = null; G.cascadeMode = false;
+  G.shake = 0; G.anim = null; G.cascadeMode = false; G.attackQueue = [];
   el.boardWrap.classList.remove('fever');
   while (G.queue.length < 3) G.queue.push(nextType());
   ensureAudio();
@@ -539,6 +579,7 @@ function gameOver() {
   el.startBtn.innerHTML = '다시 시작 <span class="key-hint">Enter</span>';
   el.overlay.classList.remove('hidden');
   updateHUD();
+  if (Hooks.onGameOver) Hooks.onGameOver();
 }
 function togglePause() {
   if (G.phase === 'play') {
@@ -571,6 +612,13 @@ function loop(now) {
 function update(dt, now) {
   tickFever(now);
   updateEffects(dt);
+
+  // 수신된 공격은 플레이 가능한 시점에만 적용
+  if (G.phase === 'play' && G.attackQueue.length) {
+    const a = G.attackQueue.shift();
+    if (a.type === 'garbage') receiveGarbage(a.n);
+    else if (a.type === 'shift') forceShift(a.dir);
+  }
 
   if (G.phase === 'play' && G.piece) {
     G.dropTimer += dt * 1000;
@@ -916,6 +964,15 @@ document.addEventListener('visibilitychange', () => { G.lastTime = performance.n
 /* 루프 엔지니어링용 디버그 훅 */
 window.__game = {
   G, gravityShift, startGame, hardDrop, tryMove, tryRotate,
+  Hooks, enqueueAttack, forceShift, COLORS,
+  showOverlay(title, msg, btnText) {
+    el.overlayTitle.textContent = title;
+    el.overlayMsg.innerHTML = msg;
+    el.startBtn.innerHTML = btnText;
+    el.overlay.classList.remove('hidden');
+  },
+  hideOverlay() { el.overlay.classList.add('hidden'); },
+  popup, endRun() { G.phase = 'gameover'; G.piece = null; G.anim = null; G.attackQueue = []; },
   setGrid(rows) { G.grid = rows; },
   emptyGrid, fullRows, computeCascade,
   // 회전 없이 캐스케이드→체인 판정만 실행 (테스트용)

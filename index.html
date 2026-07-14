@@ -53,6 +53,17 @@
             <h2 id="overlay-title">GRAVITY FLUX</h2>
             <p id="overlay-msg">블록을 쌓고, 라인을 지우고,<br><b>Q / E</b>로 중력을 회전시켜<br>연쇄 클리어의 쾌감을 느껴보세요!</p>
             <button id="start-btn">게임 시작 <span class="key-hint">Enter</span></button>
+            <button id="battle-btn">🌐 1:1 대전 모드</button>
+            <div id="battle-panel" style="display:none">
+              <div id="battle-lobby">
+                <button id="create-room-btn" class="mini-btn">방 만들기</button>
+                <div class="join-row">
+                  <input id="join-code" maxlength="4" placeholder="방 코드" autocomplete="off">
+                  <button id="join-btn" class="mini-btn">참가</button>
+                </div>
+              </div>
+              <p id="battle-status"></p>
+            </div>
           </div>
         </div>
       </div>
@@ -70,6 +81,11 @@
           <div class="stat-row"><span>LEVEL</span><span id="level">1</span></div>
           <div class="stat-row"><span>LINES</span><span id="lines">0</span></div>
           <div class="stat-row chain-row"><span>MAX CHAIN</span><span id="max-chain">0</span></div>
+        </section>
+        <section class="box opp-box" id="opp-box" style="display:none">
+          <h2>OPPONENT <span id="opp-status" class="key-hint">-</span></h2>
+          <canvas id="opp-canvas" width="120" height="120"></canvas>
+          <div class="stat-row"><span>SCORE</span><span id="opp-score">0</span></div>
         </section>
       </aside>
     </main>
@@ -97,5 +113,7 @@
     </footer>
   </div>
   <script src="game.js"></script>
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <script src="battle.js"></script>
 </body>
 </html>
