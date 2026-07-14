@@ -838,6 +838,66 @@ document.querySelectorAll('.tc-btn').forEach(btn => {
   btn.addEventListener('mousedown', fire);
 });
 
+/* 보드 스와이프 제스처 (모바일)
+   좌우 드래그: 이동 · 아래 드래그: 소프트 드롭 · 빠른 아래 플릭: 하드 드롭
+   탭: 회전 · 위로 스와이프: 홀드 · 두 손가락 좌우: 중력 시프트 */
+const swipe = { active: false, x0: 0, y0: 0, t0: 0, lastX: 0, lastY: 0, axis: null, moved: false, twoFinger: false, tfX0: 0 };
+const SWIPE_STEP = 26; // 1칸 이동당 드래그 픽셀
+
+canvas.addEventListener('touchstart', e => {
+  e.preventDefault();
+  ensureAudio();
+  if (G.phase !== 'play') return;
+  if (e.touches.length >= 2) {
+    swipe.active = false;
+    swipe.twoFinger = true;
+    swipe.tfX0 = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+    return;
+  }
+  const t = e.touches[0];
+  Object.assign(swipe, {
+    active: true, twoFinger: false, axis: null, moved: false,
+    x0: t.clientX, y0: t.clientY, lastX: t.clientX, lastY: t.clientY, t0: performance.now(),
+  });
+}, { passive: false });
+
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if (swipe.twoFinger || !swipe.active) return;
+  const t = e.touches[0];
+  const dxTotal = t.clientX - swipe.x0, dyTotal = t.clientY - swipe.y0;
+  if (!swipe.axis && (Math.abs(dxTotal) > 14 || Math.abs(dyTotal) > 14)) {
+    swipe.axis = Math.abs(dxTotal) > Math.abs(dyTotal) ? 'h' : 'v';
+  }
+  if (swipe.axis === 'h') {
+    let dx = t.clientX - swipe.lastX;
+    while (dx >= SWIPE_STEP) { tryMove(1, 0); swipe.lastX += SWIPE_STEP; dx -= SWIPE_STEP; swipe.moved = true; }
+    while (dx <= -SWIPE_STEP) { tryMove(-1, 0); swipe.lastX -= SWIPE_STEP; dx += SWIPE_STEP; swipe.moved = true; }
+  } else if (swipe.axis === 'v') {
+    let dy = t.clientY - swipe.lastY;
+    while (dy >= SWIPE_STEP) { tryMove(0, 1); swipe.lastY += SWIPE_STEP; dy -= SWIPE_STEP; swipe.moved = true; }
+  }
+}, { passive: false });
+
+canvas.addEventListener('touchend', e => {
+  e.preventDefault();
+  if (swipe.twoFinger) {
+    const dx = e.changedTouches[0].clientX - swipe.tfX0;
+    if (dx > 40) gravityShift(1);
+    else if (dx < -40) gravityShift(-1);
+    swipe.twoFinger = false;
+    return;
+  }
+  if (!swipe.active) return;
+  swipe.active = false;
+  const t = e.changedTouches[0];
+  const dx = t.clientX - swipe.x0, dy = t.clientY - swipe.y0;
+  const dur = performance.now() - swipe.t0;
+  if (Math.hypot(dx, dy) < 12 && dur < 300 && !swipe.moved) { tryRotate(1); return; } // 탭 = 회전
+  if (dy > 60 && dy / dur > 0.45 && Math.abs(dy) > Math.abs(dx)) { hardDrop(); return; } // 아래로 플릭 = 하드 드롭
+  if (dy < -40 && Math.abs(dy) > Math.abs(dx)) doHold(); // 위로 = 홀드
+}, { passive: false });
+
 /* ── 초기화 ───────────────────────────────────────── */
 try { G.best = parseInt(localStorage.getItem('gflux-best') || '0', 10) || 0; } catch (e) { G.best = 0; }
 updateHUD();

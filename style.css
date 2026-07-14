@@ -117,6 +117,7 @@ html, body {
 #board-wrap { position: relative; }
 #board {
   display: block;
+  touch-action: none;
   border-radius: 12px;
   border: 2px solid var(--border);
   box-shadow: 0 0 40px rgba(0, 229, 255, 0.12), inset 0 0 60px rgba(0,0,0,0.5);
@@ -236,6 +237,7 @@ canvas#hold-canvas, canvas#next-canvas { display: block; margin: 0 auto; }
 .tc-btn:active { background: #2a2a5a; transform: scale(0.95); }
 .tc-shift { color: var(--gold); border-color: #665522; }
 .tc-drop { color: var(--accent); }
+.tc-hint { text-align: center; font-size: 10.5px; color: var(--dim); line-height: 1.6; margin-top: 2px; }
 
 footer { margin-top: 16px; color: var(--dim); font-size: 11px; text-align: center; }
 
