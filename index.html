@@ -59,7 +59,7 @@
               <div id="battle-lobby">
                 <button id="create-room-btn" class="mini-btn">방 만들기</button>
                 <div class="join-row">
-                  <input id="join-code" maxlength="4" placeholder="방 코드" autocomplete="off">
+                  <input id="join-code" maxlength="16" placeholder="영단어 코드" autocomplete="off">
                   <button id="join-btn" class="mini-btn">참가</button>
                 </div>
               </div>
@@ -87,6 +87,7 @@
           <h2>OPPONENT <span id="opp-status" class="key-hint">-</span></h2>
           <canvas id="opp-canvas" width="120" height="120"></canvas>
           <div class="stat-row"><span>SCORE</span><span id="opp-score">0</span></div>
+          <div class="stat-row"><span>전적</span><span id="record">0승 0패</span></div>
         </section>
       </aside>
     </main>
