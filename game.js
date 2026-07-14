@@ -555,11 +555,16 @@ function togglePause() {
 }
 
 /* ── 메인 루프 ────────────────────────────────────── */
-function loop(now) {
+function tick(now) {
   const dt = Math.min((now - G.lastTime) / 1000, 0.05);
   G.lastTime = now;
   update(dt, now);
   render();
+}
+let lastRafTime = 0;
+function loop(now) {
+  lastRafTime = now;
+  tick(now);
   requestAnimationFrame(loop);
 }
 
@@ -838,6 +843,15 @@ try { G.best = parseInt(localStorage.getItem('gflux-best') || '0', 10) || 0; } c
 updateHUD();
 G.lastTime = performance.now();
 requestAnimationFrame(loop);
+
+// rAF가 멈추는 환경(백그라운드 탭, 임베디드 웹뷰 등)을 위한 폴백 드라이버.
+// rAF가 200ms 이상 발화하지 않으면 setInterval이 게임을 대신 구동한다.
+setInterval(() => {
+  const now = performance.now();
+  if (now - lastRafTime > 200) tick(now);
+}, 50);
+// 탭이 다시 보일 때 시간 점프로 인한 프레임 폭주 방지
+document.addEventListener('visibilitychange', () => { G.lastTime = performance.now(); });
 
 /* 루프 엔지니어링용 디버그 훅 */
 window.__game = {
