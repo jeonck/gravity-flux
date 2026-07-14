@@ -17,6 +17,7 @@
     peer: null, conn: null,
     active: false,      // 대전 진행 중
     connected: false,
+    counting: false,    // 카운트다운 진행 중
     myReady: false, oppReady: false, // 재대결 준비
     oppScore: 0,
     stateTimer: null,
@@ -37,6 +38,7 @@
     oppScore: $('opp-score'),
     oppStatus: $('opp-status'),
     startBtn: $('start-btn'),
+    countdown: $('countdown'),
   };
   const octx = ui.oppCanvas.getContext('2d');
 
@@ -81,7 +83,7 @@
     conn.on('open', () => {
       B.connected = true;
       setStatus('상대 연결됨! 곧 시작합니다…', '#5aff8a');
-      if (isHost) setTimeout(() => { send({ t: 'start' }); startBattle(); }, 1200);
+      if (isHost) setTimeout(() => { send({ t: 'start' }); beginBattle(); }, 400);
     });
     conn.on('data', onMessage);
     conn.on('close', () => {
@@ -102,7 +104,7 @@
   /* ── 프로토콜 ── */
   function onMessage(msg) {
     switch (msg.t) {
-      case 'start': startBattle(); break;
+      case 'start': beginBattle(); break;
       case 'state':
         B.oppScore = msg.score;
         ui.oppScore.textContent = msg.score.toLocaleString();
@@ -125,6 +127,44 @@
   }
 
   /* ── 대전 시작/종료 ── */
+  // 5-4-3-2-1 카운트다운 후 실제 시작
+  function beginBattle() {
+    if (B.counting) return;
+    B.counting = true;
+    B.active = false;
+    game.hideOverlay();
+    game.ensureAudio();
+    ui.oppBox.style.display = '';
+    const cd = ui.countdown;
+    const show = (v, isGo) => {
+      cd.textContent = v;
+      cd.classList.toggle('go', !!isGo);
+      cd.classList.remove('pop');
+      void cd.offsetWidth; // 애니메이션 재시작
+      cd.classList.add('pop');
+    };
+    cd.style.display = 'flex';
+    let n = 5;
+    show(n);
+    game.beep(440, 0.12, 'square', 0.07);
+    const iv = setInterval(() => {
+      n--;
+      if (n >= 1) {
+        show(n);
+        game.beep(n === 1 ? 660 : 440, 0.12, 'square', 0.07);
+      } else {
+        clearInterval(iv);
+        show('GO!', true);
+        game.beep(880, 0.35, 'square', 0.08, 1320);
+        setTimeout(() => {
+          cd.style.display = 'none';
+          B.counting = false;
+          startBattle();
+        }, 600);
+      }
+    }, 1000);
+  }
+
   function startBattle() {
     B.active = true;
     B.myReady = false; B.oppReady = false;
@@ -160,7 +200,7 @@
   }
 
   function tryRematch() {
-    if (B.myReady && B.oppReady && B.connected) startBattle();
+    if (B.myReady && B.oppReady && B.connected) beginBattle();
     else if (B.oppReady) setStatus('상대가 재대결을 원합니다!', '#ffd54a');
   }
 

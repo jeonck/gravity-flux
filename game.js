@@ -964,7 +964,7 @@ document.addEventListener('visibilitychange', () => { G.lastTime = performance.n
 /* 루프 엔지니어링용 디버그 훅 */
 window.__game = {
   G, gravityShift, startGame, hardDrop, tryMove, tryRotate,
-  Hooks, enqueueAttack, forceShift, COLORS,
+  Hooks, enqueueAttack, forceShift, COLORS, beep, ensureAudio,
   showOverlay(title, msg, btnText) {
     el.overlayTitle.textContent = title;
     el.overlayMsg.innerHTML = msg;
