@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>GRAVITY FLUX — 중력 시프트 테트리스</title>
+  <meta name="description" content="중력을 회전시켜 판을 뒤집는 차세대 테트리스. 시프트 차지를 모아 보드를 90° 회전시키고 연쇄 클리어를 노려라!">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌀</text></svg>">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <header id="title-bar">
+      <h1>GRAVITY <span class="flux">FLUX</span></h1>
+      <p class="subtitle">중력을 지배하는 자가 보드를 지배한다</p>
+    </header>
+
+    <main id="layout">
+      <!-- 왼쪽 패널: HOLD + 조작법 -->
+      <aside class="panel left-panel">
+        <section class="box">
+          <h2>HOLD <span class="key-hint">C</span></h2>
+          <canvas id="hold-canvas" width="110" height="80"></canvas>
+        </section>
+        <section class="box charges-box">
+          <h2>SHIFT CHARGE</h2>
+          <div id="charges" class="charges"></div>
+          <div class="charge-keys"><span class="key-hint">Q</span> ↺ &nbsp; ↻ <span class="key-hint">E</span></div>
+          <p class="charge-tip">라인 3개 클리어마다 +1</p>
+        </section>
+        <section class="box controls-box">
+          <h2>CONTROLS</h2>
+          <ul class="controls-list">
+            <li><b>← →</b> 이동</li>
+            <li><b>↓</b> 소프트 드롭</li>
+            <li><b>Space</b> 하드 드롭</li>
+            <li><b>↑ / X</b> 회전 ↻ · <b>Z</b> 회전 ↺</li>
+            <li><b>C</b> 홀드 · <b>P</b> 일시정지</li>
+            <li class="hl"><b>Q / E</b> 중력 시프트!</li>
+          </ul>
+        </section>
+      </aside>
+
+      <!-- 중앙: 게임 보드 -->
+      <div id="board-wrap">
+        <div id="fever-bar-wrap" title="FEVER 게이지">
+          <div id="fever-bar"></div>
+          <span id="fever-label">FEVER</span>
+        </div>
+        <canvas id="board" width="444" height="444"></canvas>
+        <div id="overlay" class="overlay">
+          <div class="overlay-inner">
+            <h2 id="overlay-title">GRAVITY FLUX</h2>
+            <p id="overlay-msg">블록을 쌓고, 라인을 지우고,<br><b>Q / E</b>로 중력을 회전시켜<br>연쇄 클리어의 쾌감을 느껴보세요!</p>
+            <button id="start-btn">게임 시작 <span class="key-hint">Enter</span></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 오른쪽 패널: NEXT + 점수 -->
+      <aside class="panel right-panel">
+        <section class="box">
+          <h2>NEXT</h2>
+          <canvas id="next-canvas" width="110" height="230"></canvas>
+        </section>
+        <section class="box stats-box">
+          <h2>SCORE</h2>
+          <div id="score" class="stat-big">0</div>
+          <div class="stat-row"><span>BEST</span><span id="best">0</span></div>
+          <div class="stat-row"><span>LEVEL</span><span id="level">1</span></div>
+          <div class="stat-row"><span>LINES</span><span id="lines">0</span></div>
+          <div class="stat-row chain-row"><span>MAX CHAIN</span><span id="max-chain">0</span></div>
+        </section>
+      </aside>
+    </main>
+
+    <!-- 모바일 터치 컨트롤 -->
+    <div id="touch-controls">
+      <div class="tc-row">
+        <button data-act="shiftL" class="tc-btn tc-shift">↺Q</button>
+        <button data-act="rotL" class="tc-btn">⟲</button>
+        <button data-act="rotR" class="tc-btn">⟳</button>
+        <button data-act="shiftR" class="tc-btn tc-shift">E↻</button>
+      </div>
+      <div class="tc-row">
+        <button data-act="left" class="tc-btn">◀</button>
+        <button data-act="down" class="tc-btn">▼</button>
+        <button data-act="drop" class="tc-btn tc-drop">⤓</button>
+        <button data-act="right" class="tc-btn">▶</button>
+        <button data-act="hold" class="tc-btn">HOLD</button>
+      </div>
+    </div>
+
+    <footer>
+      <p>🌀 GRAVITY FLUX — 세상에 없던 중력 시프트 테트리스 · Made with Claude</p>
+    </footer>
+  </div>
+  <script src="game.js"></script>
+</body>
+</html>
